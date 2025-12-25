@@ -1,8 +1,8 @@
-# Welcome to your Lovable project
+# Welcome to governament scheme awareness
 
 ## Project info
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+**URL**:https://id-preview--70a0e7ad-37cf-401a-92b8-ef5e8e39a735.lovable.app/?__lovable_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoiUWNMMTZkSDZkekw4cUpLbDUwSDNNUlBoWmxkMiIsInByb2plY3RfaWQiOiI3MGEwZTdhZC0zN2NmLTQwMWEtOTJiOC1lZjVlOGUzOWE3MzUiLCJub25jZSI6IjQyMDVkMjExMzJjOTdhOTViNDAyODU3YzM1NGNiMzM2IiwiaXNzIjoibG92YWJsZS1hcGkiLCJzdWIiOiI3MGEwZTdhZC0zN2NmLTQwMWEtOTJiOC1lZjVlOGUzOWE3MzUiLCJhdWQiOlsibG92YWJsZS1hcHAiXSwiZXhwIjoxNzY3MjQzMjE1LCJuYmYiOjE3NjY2Mzg0MTUsImlhdCI6MTc2NjYzODQxNX0.OulCBNkAIRcUmQen70Zw5eZY9ovZmZLOjEk2cT1tHgU
 
 ## How can I edit this code?
 
