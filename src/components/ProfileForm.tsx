@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,9 +10,14 @@ import { states, districts, educationLevels, incomeRanges, occupations } from '@
 import { toast } from 'sonner';
 import { MapPin, User, Briefcase, GraduationCap, IndianRupee, Loader2 } from 'lucide-react';
 
-const ProfileForm: React.FC = () => {
+interface ProfileFormProps {
+  isEditing?: boolean;
+  onCancel?: () => void;
+}
+
+const ProfileForm: React.FC<ProfileFormProps> = ({ isEditing = false, onCancel }) => {
   const { t, language } = useLanguage();
-  const { updateProfile } = useAuth();
+  const { updateProfile, user } = useAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -24,6 +29,21 @@ const ProfileForm: React.FC = () => {
     state: '',
     district: '',
   });
+
+  // Pre-fill form when editing
+  useEffect(() => {
+    if (isEditing && user?.profile) {
+      setFormData({
+        age: user.profile.age.toString(),
+        gender: user.profile.gender,
+        education: user.profile.education,
+        income: user.profile.income,
+        occupation: user.profile.occupation,
+        state: user.profile.state,
+        district: user.profile.district,
+      });
+    }
+  }, [isEditing, user?.profile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,8 +67,12 @@ const ProfileForm: React.FC = () => {
       district: formData.district,
     });
     
-    toast.success('Profile updated successfully!');
-    navigate('/schemes');
+    toast.success(isEditing ? 'Profile updated successfully!' : 'Profile created successfully!');
+    if (onCancel) {
+      onCancel();
+    } else {
+      navigate('/schemes');
+    }
     setIsLoading(false);
   };
 
@@ -205,16 +229,25 @@ const ProfileForm: React.FC = () => {
         </div>
       </div>
 
-      <Button type="submit" variant="hero" size="lg" className="w-full" disabled={isLoading}>
-        {isLoading ? (
-          <>
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Processing...
-          </>
-        ) : (
-          t('submit')
+      <div className="flex gap-3">
+        {isEditing && onCancel && (
+          <Button type="button" variant="outline" size="lg" className="flex-1" onClick={onCancel}>
+            Cancel
+          </Button>
         )}
-      </Button>
+        <Button type="submit" variant="hero" size="lg" className={isEditing ? 'flex-1' : 'w-full'} disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Processing...
+            </>
+          ) : isEditing ? (
+            'Save Changes'
+          ) : (
+            t('submit')
+          )}
+        </Button>
+      </div>
     </form>
   );
 };

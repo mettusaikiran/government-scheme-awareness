@@ -1,17 +1,50 @@
-import React from 'react';
-import { Navigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Navigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import ProfileForm from '@/components/ProfileForm';
-import { User, FileText, CheckCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { User, FileText, CheckCircle, Edit, ArrowRight } from 'lucide-react';
+import { educationLevels, incomeRanges, occupations, states, districts } from '@/data/locations';
 
 const Profile: React.FC = () => {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const [isEditing, setIsEditing] = useState(false);
 
   if (!user) {
     return <Navigate to="/login" />;
   }
+
+  const getDisplayValue = (key: string, value: string | number) => {
+    switch (key) {
+      case 'education':
+        return educationLevels.find(e => e.value === value)?.label[language] || value;
+      case 'income':
+        return incomeRanges.find(r => r.value === value)?.label[language] || value;
+      case 'occupation':
+        return occupations.find(o => o.value === value)?.label[language] || value;
+      case 'state':
+        return states.find(s => s.value === value)?.label[language] || value;
+      case 'district':
+        const stateDistricts = districts[user.profile?.state || ''] || [];
+        return stateDistricts.find(d => d.value === value)?.label[language] || value;
+      case 'gender':
+        return t(value as string);
+      default:
+        return String(value);
+    }
+  };
+
+  const profileLabels: Record<string, string> = {
+    age: t('age'),
+    gender: t('gender'),
+    education: t('education'),
+    income: 'Annual Income',
+    occupation: t('occupation'),
+    state: t('state'),
+    district: t('district'),
+  };
 
   return (
     <div className="min-h-screen pt-20 pb-12 px-4">
@@ -53,31 +86,47 @@ const Profile: React.FC = () => {
                   : 'Fill in your details below to find eligible schemes'}
               </p>
             </div>
+            {user.profileCompleted && !isEditing && (
+              <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                <Edit className="w-4 h-4 mr-2" />
+                Edit Profile
+              </Button>
+            )}
           </div>
         </div>
 
-        {/* Profile Form */}
-        {!user.profileCompleted && (
+        {/* Profile Form (for new or editing) */}
+        {(!user.profileCompleted || isEditing) && (
           <div className="bg-card rounded-2xl border border-border/50 shadow-elevated p-6 md:p-8 animate-fade-up" style={{ animationDelay: '200ms' }}>
             <h2 className="text-xl font-semibold text-foreground mb-6">
-              {t('profile')} Details
+              {isEditing ? 'Edit Profile' : `${t('profile')} Details`}
             </h2>
-            <ProfileForm />
+            <ProfileForm isEditing={isEditing} onCancel={() => setIsEditing(false)} />
           </div>
         )}
 
-        {/* Profile Summary (when complete) */}
-        {user.profileCompleted && user.profile && (
+        {/* Profile Summary (when complete and not editing) */}
+        {user.profileCompleted && user.profile && !isEditing && (
           <div className="bg-card rounded-2xl border border-border/50 shadow-elevated p-6 md:p-8 animate-fade-up" style={{ animationDelay: '200ms' }}>
             <h2 className="text-xl font-semibold text-foreground mb-6">Your Profile</h2>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-4 mb-6">
               {Object.entries(user.profile).map(([key, value]) => (
                 <div key={key} className="bg-muted/50 rounded-lg p-3">
-                  <span className="text-xs text-muted-foreground uppercase tracking-wide">{key}</span>
-                  <p className="font-medium text-foreground capitalize">{String(value)}</p>
+                  <span className="text-xs text-muted-foreground uppercase tracking-wide">
+                    {profileLabels[key] || key}
+                  </span>
+                  <p className="font-medium text-foreground capitalize">
+                    {getDisplayValue(key, value)}
+                  </p>
                 </div>
               ))}
             </div>
+            <Link to="/schemes">
+              <Button variant="hero" className="w-full">
+                View Recommended Schemes
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
           </div>
         )}
       </div>
