@@ -2,21 +2,21 @@ import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { schemes } from '@/data/schemes';
+import { schemes, categories } from '@/data/schemes';
 import { incomeRanges } from '@/data/locations';
 import SchemeCard from '@/components/SchemeCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Filter, MapPin, ArrowRight, User } from 'lucide-react';
-
-const categories = ['all', 'agriculture', 'health', 'education', 'housing', 'social'];
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Search, Filter, MapPin, ArrowRight, User, ListFilter, Sparkles } from 'lucide-react';
 
 const Schemes: React.FC = () => {
   const { user } = useAuth();
   const { t, language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [activeTab, setActiveTab] = useState<'recommended' | 'all'>(user?.profileCompleted ? 'recommended' : 'all');
 
   // Calculate eligibility and match percentage
   const recommendedSchemes = useMemo(() => {
@@ -61,18 +61,39 @@ const Schemes: React.FC = () => {
     }).sort((a, b) => (b.matchPercentage || 0) - (a.matchPercentage || 0));
   }, [user]);
 
-  // Filter schemes
+  // Filter schemes based on search and category
   const filteredSchemes = useMemo(() => {
-    return recommendedSchemes.filter(scheme => {
+    const schemesToFilter = activeTab === 'recommended' && user?.profileCompleted 
+      ? recommendedSchemes.filter(s => (s.matchPercentage || 0) >= 50)
+      : recommendedSchemes;
+
+    return schemesToFilter.filter(scheme => {
       const matchesSearch = searchQuery === '' || 
         scheme.name[language].toLowerCase().includes(searchQuery.toLowerCase()) ||
-        scheme.description[language].toLowerCase().includes(searchQuery.toLowerCase());
+        scheme.description[language].toLowerCase().includes(searchQuery.toLowerCase()) ||
+        scheme.category.toLowerCase().includes(searchQuery.toLowerCase());
       
       const matchesCategory = selectedCategory === 'all' || scheme.category === selectedCategory;
 
       return matchesSearch && matchesCategory;
     });
-  }, [recommendedSchemes, searchQuery, selectedCategory, language]);
+  }, [recommendedSchemes, searchQuery, selectedCategory, language, activeTab, user?.profileCompleted]);
+
+  // All schemes (for browsing)
+  const allSchemesFiltered = useMemo(() => {
+    return schemes.filter(scheme => {
+      const matchesSearch = searchQuery === '' || 
+        scheme.name[language].toLowerCase().includes(searchQuery.toLowerCase()) ||
+        scheme.description[language].toLowerCase().includes(searchQuery.toLowerCase()) ||
+        scheme.category.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesCategory = selectedCategory === 'all' || scheme.category === selectedCategory;
+
+      return matchesSearch && matchesCategory;
+    }).map(s => ({ ...s, matchPercentage: undefined }));
+  }, [searchQuery, selectedCategory, language]);
+
+  const displayedSchemes = activeTab === 'all' ? allSchemesFiltered : filteredSchemes;
 
   return (
     <div className="min-h-screen pt-20 pb-12 px-4">
@@ -83,9 +104,7 @@ const Schemes: React.FC = () => {
             {t('schemes')}
           </h1>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            {user?.profileCompleted 
-              ? 'Schemes are sorted by eligibility match. Higher match means better fit for your profile.'
-              : 'Browse available government schemes. Login and complete your profile for personalized recommendations.'}
+            Browse all government schemes available in India or get personalized recommendations based on your profile.
           </p>
         </div>
 
@@ -112,14 +131,32 @@ const Schemes: React.FC = () => {
           </div>
         )}
 
-        {/* Filters */}
+        {/* Tabs for Recommended vs All */}
+        {user?.profileCompleted && (
+          <div className="mb-6 animate-fade-up" style={{ animationDelay: '50ms' }}>
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'recommended' | 'all')}>
+              <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
+                <TabsTrigger value="recommended" className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Recommended
+                </TabsTrigger>
+                <TabsTrigger value="all" className="flex items-center gap-2">
+                  <ListFilter className="w-4 h-4" />
+                  All Schemes
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        )}
+
+        {/* Search and Filters */}
         <div className="flex flex-col md:flex-row gap-4 mb-8 animate-fade-up" style={{ animationDelay: '100ms' }}>
           {/* Search */}
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input
               type="text"
-              placeholder="Search schemes..."
+              placeholder="Search schemes by name, category, or description..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-11"
@@ -147,33 +184,62 @@ const Schemes: React.FC = () => {
         {/* Results Count */}
         <div className="flex items-center justify-between mb-6 animate-fade-up" style={{ animationDelay: '150ms' }}>
           <p className="text-muted-foreground">
-            Showing <span className="font-semibold text-foreground">{filteredSchemes.length}</span> schemes
+            Showing <span className="font-semibold text-foreground">{displayedSchemes.length}</span> schemes
+            {activeTab === 'recommended' && user?.profileCompleted && ' (50%+ match)'}
           </p>
           {user?.profile && (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Link to="/profile" className="flex items-center gap-2 text-sm text-primary hover:underline">
               <MapPin className="w-4 h-4" />
-              <span>Filtered for {user.profile.state}</span>
-            </div>
+              <span>Edit Profile</span>
+            </Link>
           )}
         </div>
 
         {/* Schemes Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredSchemes.map((scheme, index) => (
+          {displayedSchemes.map((scheme, index) => (
             <SchemeCard key={scheme.id} scheme={scheme} index={index} />
           ))}
         </div>
 
         {/* Empty State */}
-        {filteredSchemes.length === 0 && (
+        {displayedSchemes.length === 0 && (
           <div className="text-center py-20">
             <div className="w-20 h-20 bg-muted rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Search className="w-10 h-10 text-muted-foreground" />
             </div>
             <h3 className="text-xl font-semibold text-foreground mb-2">No schemes found</h3>
-            <p className="text-muted-foreground">Try adjusting your search or filter criteria</p>
+            <p className="text-muted-foreground mb-4">Try adjusting your search or filter criteria</p>
+            {activeTab === 'recommended' && (
+              <Button variant="outline" onClick={() => setActiveTab('all')}>
+                Browse All Schemes
+              </Button>
+            )}
           </div>
         )}
+
+        {/* Stats Section */}
+        <div className="mt-16 bg-card rounded-2xl border border-border/50 p-8 animate-fade-up">
+          <h3 className="text-xl font-semibold text-foreground mb-6 text-center">Scheme Categories</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {categories.filter(c => c !== 'all').map(category => {
+              const count = schemes.filter(s => s.category === category).length;
+              return (
+                <button
+                  key={category}
+                  onClick={() => {
+                    setSelectedCategory(category);
+                    setActiveTab('all');
+                  }}
+                  className="bg-muted/50 hover:bg-muted rounded-xl p-4 text-center transition-colors"
+                >
+                  <p className="text-2xl font-bold text-primary">{count}</p>
+                  <p className="text-sm text-muted-foreground capitalize">{category}</p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
