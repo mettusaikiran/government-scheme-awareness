@@ -1,8 +1,9 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ExternalLink, CheckCircle, IndianRupee, Users, Calendar } from 'lucide-react';
+import { ExternalLink, CheckCircle, IndianRupee, Users, Calendar, ArrowRight } from 'lucide-react';
 
 interface Scheme {
   id: string;
@@ -92,13 +93,21 @@ const SchemeCard: React.FC<SchemeCardProps> = ({ scheme, index }) => {
           </p>
         </div>
 
-        {/* Apply Button */}
-        <a href={scheme.link} target="_blank" rel="noopener noreferrer">
-          <Button variant="hero" className="w-full">
-            {t('applyNow')}
-            <ExternalLink className="w-4 h-4" />
-          </Button>
-        </a>
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          <Link to={`/scheme/${scheme.id}`} className="flex-1">
+            <Button variant="outline" className="w-full">
+              View Details
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </Link>
+          <a href={scheme.link} target="_blank" rel="noopener noreferrer" className="flex-1">
+            <Button variant="hero" className="w-full">
+              {t('applyNow')}
+              <ExternalLink className="w-4 h-4" />
+            </Button>
+          </a>
+        </div>
       </div>
     </div>
   );

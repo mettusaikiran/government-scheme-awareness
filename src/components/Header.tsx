@@ -3,8 +3,9 @@ import { Link, useLocation } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import LanguageSwitcher from './LanguageSwitcher';
+import AccessibilityMenu from './AccessibilityMenu';
 import { Button } from '@/components/ui/button';
-import { Menu, X, User, LogOut, FileText, Home } from 'lucide-react';
+import { Menu, X, User, LogOut, FileText, Home, LayoutDashboard } from 'lucide-react';
 
 const Header: React.FC = () => {
   const { t } = useLanguage();
@@ -14,6 +15,7 @@ const Header: React.FC = () => {
 
   const navLinks = [
     { path: '/', label: t('home'), icon: Home },
+    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/schemes', label: t('schemes'), icon: FileText },
     ...(user ? [{ path: '/profile', label: t('profile'), icon: User }] : []),
   ];
@@ -51,7 +53,8 @@ const Header: React.FC = () => {
           </nav>
 
           {/* Right Section */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <AccessibilityMenu />
             <LanguageSwitcher />
             
             {user ? (
